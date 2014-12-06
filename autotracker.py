@@ -1,3 +1,6 @@
+#### Edited to run with Python 3 by Mike Nickels for Ludum Dare #31 - 5 December 2014
+#### (All I did was replace print "" statements with print("") statements, and xrange() with range()
+
 # autotracker-bottomup - the quite a few times more ultimate audio experience
 # by Ben "GreaseMonkey" Russell, 2011. Public domain.
 #
@@ -70,8 +73,8 @@ class ITFile:
         self.inslist = []
         self.smplist = []
         self.patlist = []
-        self.chnpan = [32 for i in xrange(64)]
-        self.chnvol = [64 for i in xrange(64)]
+        self.chnpan = [32 for i in range(64)]
+        self.chnvol = [64 for i in range(64)]
         self.version = 0x0217
         self.vercompat = 0x0200
         self.flags = (
@@ -142,12 +145,16 @@ class ITFile:
         fp.write(''.join(chr(v) for v in ordlist))
 
         l = self.inslist + self.smplist + self.patlist
-        for i in xrange(len(l)):
+        for i in range(len(l)):
             self.enqueue_ptr(l[i].write)
 
         fp.write(struct.pack("<HI",0,0))
 
     def write(self, data):
+        try:
+            data = data.encode('UTF-8')
+        except:
+            pass
         self.fp.write(data)
 
     def write_padded(self, length, s, addnull = True):
@@ -244,7 +251,7 @@ class Sample:
         amp = self.boost / max(-l,h)
         #print amp
 
-        for i in xrange(len(self.data)):
+        for i in range(len(self.data)):
             self.data[i] *= amp
 
     def generate(self, *args, **kwargs):
@@ -255,7 +262,7 @@ class Pattern:
         self.rows = rows
         assert rows >= 4, "too few rows" # note, this is just so modplug doesn't whinge. IT can handle 1-row patterns.
         assert rows <= 200, "too many rows" # on the other hand, IT chunders if you have more than 200 rows.
-        self.data = [[[253,0,255,0,0] for j in xrange(64)] for i in xrange(rows)]
+        self.data = [[[253,0,255,0,0] for j in range(64)] for i in range(rows)]
 
         # these are the defaults...
         # - note = 253 (0xFD)
@@ -272,10 +279,10 @@ class Pattern:
 
     def dopack(self):
         self.packbuf = []
-        lc = [[253,0,255,0,0] for j in xrange(64)]
-        lm = [0x00 for j in xrange(64)]
+        lc = [[253,0,255,0,0] for j in range(64)]
+        lm = [0x00 for j in range(64)]
         for l in self.data:
-            for i in xrange(64):
+            for i in range(64):
                 c = l[i]
                 m = 0x00
                 if c[0] != 253:
@@ -327,7 +334,7 @@ class Sample_KS(Sample):
     def generate(self, freq, decay, filtn, length_sec, nfrqmul = 1.0, filt0 = 1.0, filtf = 1.0, filtdc = 0.01):
         # generate waveform
         delay = int(SMP_FREQ/freq)
-        noise = [0 for i in xrange(delay)]
+        noise = [0 for i in range(delay)]
 
         nfrqctr = 1.0
         nfrqval = 0.0
@@ -353,7 +360,7 @@ class Sample_KS(Sample):
         qf = 0.0 #noise[-1]
         l = []
         i = 0
-        for j in xrange(intlen):
+        for j in range(intlen):
             #ov = noise[i]
             if nvolcur > 0.0:
                 if nfrqctr >= 1.0:
@@ -406,7 +413,7 @@ class Sample_Kicker(Sample):
 
         intlen = int(SMP_FREQ*0.25)
         l = []
-        for j in xrange(intlen):
+        for j in range(intlen):
             sv = max(-0.7,min(0.7,math.sin(offs_sine)))
             offs_sine += offs_sine_speed
             offs_sine_speed *= offs_sine_decay
@@ -439,7 +446,7 @@ class Sample_NoiseHit(Sample):
 
         intlen = int(SMP_FREQ*decay)
         l = []
-        for j in xrange(intlen):
+        for j in range(intlen):
             nv = (random.random()*2.0-1.0)
             ql += (nv - ql) * filtl
             qh += (nv - qh) * filth
@@ -463,10 +470,10 @@ class Sample_Hoover(Sample):
             for v in [0.25, 0.5, 1.0, 2.0]
         ]
 
-        oscvibspeed = [float(random.randint(1,5))*2.0*math.pi/SMP_FREQ for i in xrange(4)]
+        oscvibspeed = [float(random.randint(1,5))*2.0*math.pi/SMP_FREQ for i in range(4)]
         oscvibdepth = [0.5,0.4,0.2,0.2]
-        oscoffs = [random.random() for i in xrange(4)]
-        oscviboffs = [random.random() for i in xrange(4)]
+        oscoffs = [random.random() for i in range(4)]
+        oscviboffs = [random.random() for i in range(4)]
         oscvol = [1.0, 1.0, 1.0, 0.55]
 
         attack = 0.03
@@ -476,9 +483,9 @@ class Sample_Hoover(Sample):
         intlen = int(SMP_FREQ*(attack+1.0))
 
         l = []
-        for i in xrange(intlen):
+        for i in range(intlen):
             v = 0.0
-            for j in xrange(4):
+            for j in range(4):
                 ov = oscoffs[j]*2.0-1.0
                 vib = math.sin(oscviboffs[j])*oscvibdepth[j]
                 oscoffs[j] += oscfrq[j] * (2.0**(vib/12.0))
@@ -629,7 +636,7 @@ class Strategy_Main(Strategy):
 
         kseq = self.kseq2[:] if self.pat_idx % 8 >= 4 else self.kseq[:]
 
-        for i in xrange(0,self.patsize,self.blocksize):
+        for i in range(0,self.patsize,self.blocksize):
             k,kt = kseq.pop(0)
             kchord = kt(self.basenote+k)
             for chn,gen in self.gens:
@@ -668,7 +675,7 @@ class Generator_Bass(Generator):
 
         leadin = 0
 
-        for row in xrange(bbeg, bbeg+blen, 1):
+        for row in range(bbeg, bbeg+blen, 1):
             if rhythm[row]&1:
                 n = base-12 if random.random() < 0.5 else base
                 pat.data[row][chn] = [n, self.smp, 255, 0, 0]
@@ -685,7 +692,7 @@ class Generator_Bass(Generator):
                         if leadin > gran*3 and random.random() < 0.4:
                             count += 1
 
-                    for j in xrange(count):
+                    for j in range(count):
                         pat.data[row-(j+1)*gran][chn] = [
                              base+12 if random.random() < 0.5 else base
                             ,self.smp
@@ -799,9 +806,9 @@ class Generator_AmbientMelody(Generator):
                     row += self.beatrow
             elif row-bbeg >= 2*self.beatrow and random.random() < 0.3:
                 backstep = random.randint(3,min(10,row//(self.beatrow//2)))*(self.beatrow//2)
-                print "back", row, backstep
+                print("back", row, backstep)
 
-                for i in xrange(backstep):
+                for i in range(backstep):
                     if row-bbeg >= blen:
                         break
                     pat.data[row][chn] = pat.data[row-backstep][chn][:]
@@ -825,13 +832,13 @@ class Generator_AmbientMelody(Generator):
                         break
 
                     m = None
-                    print rbn
-                    for j in xrange(20):
+                    print(rbn)
+                    for j in range(20):
                         m = random.choice(self.MOTIF_PROSPECTS)
 
                         down = random.random() < (8.0+(self.ln-base))/8.0 if self.ln != -1 else 0.5
 
-                        print m,rbn,down,base
+                        print(m,rbn,down,base)
                         if down:
                             m = [rbn-v for v in m]
                         else:
@@ -858,7 +865,7 @@ class Generator_AmbientMelody(Generator):
                 if rbn != self.ln:
                     m = [rbn] + m
 
-                print m
+                print(m)
                 self.mq += m
 
                 # repeat at same row
@@ -875,7 +882,7 @@ class Generator_Drums(Generator):
         return 3
 
     def apply_notes(self, chn, pat, strat, rhythm, bbeg, blen, kroot, kchord):
-        for row in xrange(bbeg,bbeg+blen,self.beatrow):
+        for row in range(bbeg,bbeg+blen,self.beatrow):
             vol = 255
             smp = self.s_hhc
             if not (rhythm[row]&2):
@@ -893,12 +900,12 @@ class Generator_Drums(Generator):
 
             pat.data[row][chn] = [60, smp, vol, 0, 0]
 
-        for row in xrange(bbeg,bbeg+blen,2):
+        for row in range(bbeg,bbeg+blen,2):
             if random.random() < 0.1 and not rhythm[row]&1:
                 pat.data[row][chn+1] = [60,self.s_kick,255,0,0]
 
         did_kick = False
-        for row in xrange(bbeg,bbeg+blen,1):
+        for row in range(bbeg,bbeg+blen,1):
             if rhythm[row]&1:
                 if did_kick:
                     pat.data[row][chn+2] = [60,self.s_snare,255,0,0]
@@ -919,10 +926,10 @@ class Generator_Drums(Generator):
 
 MIDDLE_C = 220.0 * (2.0 ** (3.0 / 12.0))
 
-print "Creating module"
+print("Creating module")
 itf = ITFile()
 
-print "Generating samples"
+print("Generating samples")
 # these could do with some work, they're a bit crap ATM --GM
 # note: commented a couple out as they use a fair whack of space and are unused.
 SMP_GUITAR = itf.smp_add(Sample_KS(name = "KS Guitar", freq = MIDDLE_C/2, decay = 0.005, nfrqmul = 1.0, filt0 = 0.1, filtn = 0.6, filtf = 0.0004, length_sec = 1.0))
@@ -936,15 +943,15 @@ SMP_HHO = itf.smp_add(Sample_NoiseHit(name = "NH Hihat Open", gvol = 32, decay =
 SMP_SNARE = itf.smp_add(Sample_NoiseHit(name = "NH Snare", decay = 0.12, filtl = 0.15, filth = 0.149))
 
 
-print "Generating patterns"
+print("Generating patterns")
 strat = Strategy_Main(random.randint(50,50+12-1)+12, Key_Minor if random.random() < 0.6 else Key_Major, 128, 32)
 strat.gen_add(Generator_Drums(s_kick = SMP_KICK, s_snare = SMP_SNARE, s_hhc = SMP_HHC, s_hho = SMP_HHO))
 strat.gen_add(Generator_AmbientMelody(smp = SMP_GUITAR))
 strat.gen_add(Generator_Bass(smp = SMP_BASS))
-for i in xrange(6):
+for i in range(6):
     itf.ord_add(itf.pat_add(strat.get_pattern()))
 
-print "Saving"
+print("Saving")
 
 # pick a random name
 RN_NOUNS = [
@@ -1053,5 +1060,5 @@ if len(sys.argv) > 1:
     fname = sys.argv[1]
 itf.save(fname)
 
-print "Done"
-print "Saved as \"%s\"" % fname
+print("Done")
+print("Saved as \"%s\"" % fname)
